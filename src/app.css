@@ -1,0 +1,25 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/forms';
+@plugin '@tailwindcss/typography';
+
+@import '@skeletonlabs/skeleton';
+@import '@skeletonlabs/skeleton-svelte';
+@import '@skeletonlabs/skeleton/themes/cerberus';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+svg {
+	display: inline-block;
+}
+
+body {
+	background-image: radial-gradient(
+		at 24% 25%,
+		color-mix(in oklab, var(--color-primary-500) 30%, transparent) 0px,
+		transparent 30%
+	);
+	background-attachment: fixed;
+	background-position: center;
+	background-repeat: no-repeat;
+	background-size: cover;
+}
