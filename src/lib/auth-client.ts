@@ -1,5 +1,9 @@
-import { createAuthClient } from 'better-auth/svelte'; // make sure to import from better-auth/svelte
+import { createAuthClient } from 'better-auth/svelte';
+import { PUBLIC_BETTER_AUTH_URL } from '$env/static/public';
 
 export const authClient = createAuthClient({
-	// you can pass client configuration here
+	baseURL: PUBLIC_BETTER_AUTH_URL,
+	basePath: '/api/auth'
 });
+
+export const { signIn, signUp, signOut, useSession, getSession, getAccessToken } = authClient;

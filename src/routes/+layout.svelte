@@ -4,10 +4,12 @@
 	import Header from '$lib/site/Header.svelte';
 	import Footer from '$lib/site/Footer.svelte';
 	import { page } from '$app/state';
+	import { browser } from '$app/environment';
 	import { Toast } from '@skeletonlabs/skeleton-svelte';
 	import { toaster } from '$lib/toaster';
 	import { getFlash } from 'sveltekit-flash-message';
 	import { fade } from 'svelte/transition';
+	import { writable } from 'svelte/store';
 
 	const outer = 'px-2 sm:py-4';
 	const inner = 'w-full max-w-4xl mx-auto  py-4 space-y-4';
@@ -16,7 +18,7 @@
 
 	let { children, data } = $props();
 
-	const flash = getFlash(page);
+	const flash = browser ? getFlash(page) : writable(undefined);
 
 	$effect(() => {
 		if (!$flash) return;
@@ -55,7 +57,7 @@
 <main class="flex-auto {outer}">
 	{#key data.url}
 		<div class={inner} out:fade={{ duration: 300 }} in:fade={{ delay: 300, duration: 300 }}>
-			{@render children()}
+			{@render children?.()}
 		</div>
 	{/key}
 </main>

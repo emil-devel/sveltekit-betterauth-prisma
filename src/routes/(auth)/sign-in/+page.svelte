@@ -3,7 +3,8 @@
 	import { loginSchema } from '$lib/valibot';
 	import { valibot } from 'sveltekit-superforms/adapters';
 	import { superForm } from 'sveltekit-superforms';
-	import { ArrowRight, Lock, LogIn, UserRound } from '@lucide/svelte';
+	import { ArrowRight, Github, Globe, Lock, LogIn, Mail } from '@lucide/svelte';
+	import { signIn } from '$lib/auth-client';
 	import { fly, slide } from 'svelte/transition';
 	import { flip } from 'svelte/animate';
 
@@ -14,33 +15,58 @@
 		validators: valibot(loginSchema)
 	});
 
-	const formErrors = $derived(
-		([$errors.username ?? [], $errors.password ?? []] as string[][]).flat()
-	);
+	const formErrors = $derived(([$errors.email ?? [], $errors.password ?? []] as string[][]).flat());
 </script>
 
 <svelte:head>
-	<title>LogIn</title>
+	<title>Sign In</title>
 </svelte:head>
 
 <section class="mx-auto max-w-xs">
 	<h1 class="flex items-center justify-end gap-2 h4">
 		<LogIn />
-		<span>LogIn</span>
+		<span>Sign In</span>
 	</h1>
+	<div class="space-y-2 pt-4">
+		<button
+			class="btn w-full preset-filled-surface-200-800 btn-sm"
+			onclick={async () => {
+				await signIn.social({
+					provider: 'github'
+				});
+			}}
+		>
+			<Github size={16} />
+			Sign In with GitHub
+		</button>
+		<button
+			class="btn w-full preset-filled-surface-200-800 btn-sm"
+			onclick={async () => {
+				await signIn.social({
+					provider: 'google'
+				});
+			}}
+		>
+			<!-- No Lucide Google Icon - Lucide does not accept brand logos -->
+			<Globe size={16} />
+			Sign In with Google
+		</button>
+	</div>
 	<form class="space-y-4 py-4" method="post" use:enhance>
 		<fieldset class="space-y-2">
 			<label class="input-group grid-cols-[auto_1fr_auto]">
-				<div class="ig-cell preset-tonal" class:text-error-500={$errors.username}>
-					<UserRound size="16" />
+				<div class="ig-cell preset-tonal" class:text-error-500={$errors.email}>
+					<Mail size="16" />
 				</div>
 				<input
-					bind:value={$form.username}
+					bind:value={$form.email}
 					class="input text-sm"
 					type="text"
-					name="username"
-					aria-invalid={$errors.username ? true : undefined}
-					placeholder="username"
+					name="email"
+					oninput={() => ($form.email = ($form.email ?? '').toLowerCase())}
+					onblur={() => ($form.email = ($form.email ?? '').trim().toLowerCase())}
+					aria-invalid={$errors.email ? true : undefined}
+					placeholder="email"
 					spellcheck="false"
 					required
 				/>
@@ -70,14 +96,14 @@
 		{#if formErrors.length === 0}
 			<div transition:fly={{ y: 200 }}>
 				<button class="btn w-full preset-filled-primary-300-700" type="submit">
-					<span>Login</span>
+					<span>Sign In</span>
 				</button>
 				<p
 					class="my-2 flex items-center justify-center gap-1 border-t-[.1rem] border-t-primary-200-800 py-1 text-xs"
 				>
 					<span>Haven't Account?</span>
 					<ArrowRight size="12" />
-					<a href="/register" class="anchor">register</a>
+					<a href="/sign-up" class="anchor">Sign Up</a>
 				</p>
 			</div>
 		{/if}

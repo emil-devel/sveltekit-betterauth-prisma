@@ -1,24 +1,32 @@
-import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
+import { redirect } from 'sveltekit-flash-message/server';
 import prisma from '$lib/prisma';
 
 export const load = (async (event) => {
-	const user = event.locals.user;
-	if (!user) throw redirect(302, '/login');
-	if (user.role !== 'ADMIN') throw error(403, 'Admins only');
+	if (!event.locals.authUser) throw redirect(302, '/sign-in');
 
-	const users = await prisma.user.findMany({
-		select: {
-			id: true,
-			username: true,
-			email: true,
-			emailVerified: true,
-			role: true,
-			active: true,
-			createdAt: true
-		},
-		orderBy: { username: 'asc' }
-	});
+	const getUsers = async () => {
+		const result = await prisma.user.findMany({
+			orderBy: { name: 'asc' },
+			include: { profile: true }
+		});
 
-	return { users };
+		const users = result.map((user) => ({
+			id: user.id,
+			active: user.active,
+			role: user.role,
+			name: user.name,
+			createdAt: user.createdAt.toLocaleDateString(),
+			image: user.image,
+			avatar: user.profile?.avatar ?? null,
+			firstName: user.profile?.firstName ?? null,
+			lastName: user.profile?.lastName ?? null
+		}));
+
+		return users;
+	};
+
+	return {
+		users: await getUsers()
+	};
 }) satisfies PageServerLoad;

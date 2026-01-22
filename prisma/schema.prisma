@@ -10,35 +10,56 @@ datasource db {
 
 enum Role {
   USER
+  REDACTEUR
   ADMIN
+
+  @@map("user_role")
 }
 
 model User {
   id            String    @id
-  username      String    @unique
+  name          String    @unique
   email         String    @unique
-  emailVerified Boolean   @default(false)
-  passwordHash  String
-  role          Role      @default(USER)
+  emailVerified Boolean   @default(false) @map("email_verified")
   active        Boolean   @default(true)
+  role          Role      @default(USER)
   image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @default(now()) @updatedAt
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at")
   sessions      Session[]
   accounts      Account[]
+  profile       Profile?  @relation("ProfileByUserId")
+  profileByName Profile?  @relation("ProfileByName")
 
   @@map("user")
 }
 
+model Profile {
+  id          String  @id @default(uuid()) @db.Uuid
+  avatar      String?
+  firstName   String?
+  lastName    String?
+  emailPublic String  @default("") @map("email_public")
+  phone       String?
+  bio         String?
+  userId      String  @unique @map("user_id")
+  name        String  @unique
+
+  user       User @relation("ProfileByUserId", fields: [userId], references: [id], onDelete: Cascade)
+  userByName User @relation("ProfileByName", fields: [name], references: [name])
+
+  @@map("profile")
+}
+
 model Session {
   id        String   @id
-  expiresAt DateTime
+  expiresAt DateTime @map("expires_at")
   token     String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  ipAddress String?
-  userAgent String?
-  userId    String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  userId    String   @map("user_id")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([token])
@@ -47,19 +68,19 @@ model Session {
 
 model Account {
   id                    String    @id
-  accountId             String
-  providerId            String
-  userId                String
+  accountId             String    @map("account_id")
+  providerId            String    @map("provider_id")
+  userId                String    @map("user_id")
   user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  accessToken           String?
-  refreshToken          String?
-  idToken               String?
-  accessTokenExpiresAt  DateTime?
-  refreshTokenExpiresAt DateTime?
+  accessToken           String?   @map("access_token")
+  refreshToken          String?   @map("refresh_token")
+  idToken               String?   @map("id_token")
+  accessTokenExpiresAt  DateTime? @map("access_token_expires_at")
+  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at")
   scope                 String?
   password              String?
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
 
   @@map("account")
 }
@@ -68,9 +89,9 @@ model Verification {
   id         String   @id
   identifier String
   value      String
-  expiresAt  DateTime
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @default(now()) @updatedAt
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@map("verification")
 }

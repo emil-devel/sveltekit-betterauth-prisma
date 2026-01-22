@@ -6,7 +6,8 @@ declare global {
 		// interface Locals {}
 		interface Locals {
 			session?: { id: string; expiresAt: Date };
-			user?: import('../generated/prisma/client').User;
+			user?: typeof import('./lib/auth').auth.$Infer.User;
+			authUser?: import('./lib/permissions').AuthUser | null;
 		}
 		// interface PageData {}
 		// interface PageState {}

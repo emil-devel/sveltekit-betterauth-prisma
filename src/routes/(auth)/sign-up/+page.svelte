@@ -1,17 +1,13 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
 	import { registerSchema } from '$lib/valibot';
-	import { superForm } from 'sveltekit-superforms';
 	import { valibot } from 'sveltekit-superforms/adapters';
+	import { superForm } from 'sveltekit-superforms';
+	import { ArrowRight, Lock, LockOpen, LogIn, Mail, UserRound } from '@lucide/svelte';
 	import { fly, slide } from 'svelte/transition';
 	import { flip } from 'svelte/animate';
-	import { ArrowRight, Lock, LockOpen, LogIn, Mail, UserRound } from '@lucide/svelte';
 
-	type RegisterPageProps = PageProps & {
-		data: PageProps['data'] & { form: Parameters<typeof superForm>[0] };
-	};
-
-	let props: RegisterPageProps = $props();
+	let props: PageProps = $props();
 	let data = $state(props.data);
 
 	const { enhance, errors, form } = superForm(data.form, {
@@ -21,7 +17,7 @@
 	const formErrors = $derived(
 		(
 			[
-				$errors.username ?? [],
+				$errors.name ?? [],
 				$errors.email ?? [],
 				$errors.password ?? [],
 				$errors.passwordConfirm ?? [],
@@ -32,31 +28,17 @@
 </script>
 
 <svelte:head>
-	<title>Register</title>
+	<title>Sign Up</title>
+	<meta name="description" content="Create a new account" />
 </svelte:head>
 
 <section class="mx-auto max-w-xs">
 	<h1 class="flex items-center justify-end gap-2 h4">
 		<LogIn />
-		<span>Register</span>
+		<span>Sign Up</span>
 	</h1>
 	<form class="space-y-4 py-4" method="post" use:enhance>
 		<fieldset class="space-y-2">
-			<label class="input-group grid-cols-[auto_1fr_auto]">
-				<div class="ig-cell preset-tonal" class:text-error-500={$errors.username}>
-					<UserRound size="16" />
-				</div>
-				<input
-					bind:value={$form.username}
-					class="input text-sm"
-					type="text"
-					name="username"
-					aria-invalid={$errors.username ? 'true' : undefined}
-					placeholder="username"
-					spellcheck="false"
-					required
-				/>
-			</label>
 			<label class="input-group grid-cols-[auto_1fr_auto]">
 				<div class="ig-cell preset-tonal" class:text-error-500={$errors.email}>
 					<Mail size="16" />
@@ -66,8 +48,27 @@
 					class="input text-sm"
 					type="email"
 					name="email"
+					oninput={() => ($form.email = ($form.email ?? '').toLowerCase())}
+					onblur={() => ($form.email = ($form.email ?? '').trim().toLowerCase())}
 					aria-invalid={$errors.email ? 'true' : undefined}
 					placeholder="email"
+					spellcheck="false"
+					required
+				/>
+			</label>
+			<label class="input-group grid-cols-[auto_1fr_auto]">
+				<div class="ig-cell preset-tonal" class:text-error-500={$errors.name}>
+					<UserRound size="16" />
+				</div>
+				<input
+					bind:value={$form.name}
+					class="input text-sm"
+					type="text"
+					name="name"
+					oninput={() => ($form.name = ($form.name ?? '').toLowerCase())}
+					onblur={() => ($form.name = ($form.name ?? '').trim().toLowerCase())}
+					aria-invalid={$errors.name ? 'true' : undefined}
+					placeholder="username"
 					spellcheck="false"
 					required
 				/>
@@ -115,14 +116,14 @@
 		{#if formErrors.length === 0}
 			<div transition:fly={{ y: 200 }}>
 				<button class="btn w-full preset-filled-primary-300-700" type="submit">
-					<span>Register</span>
+					<span>Sign Up</span>
 				</button>
 				<p
 					class="my-2 flex items-center justify-center gap-1 border-t-[.1rem] border-t-primary-200-800 py-1 text-xs"
 				>
 					<span>Have Account?</span>
 					<ArrowRight size="12" />
-					<a href="/login" class="anchor">login</a>
+					<a href="/sign-in" class="anchor">Sign In</a>
 				</p>
 			</div>
 		{/if}

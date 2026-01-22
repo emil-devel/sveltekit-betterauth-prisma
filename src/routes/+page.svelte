@@ -1,12 +1,15 @@
 <script lang="ts">
-	import type { PageData } from './$types';
+	import type { PageServerData } from './$types';
 
-	const { data } = $props<{ data: PageData }>();
-	let { user } = $derived(data);
+	let { data }: { data: PageServerData } = $props();
 </script>
 
-<div>
-	<p>
-		{user ? user?.username : 'Nobody'} is signed in.
-	</p>
-</div>
+<svelte:head>
+	<title>Startpage - SvelteKit BetterAuth Prisma</title>
+	<meta
+		name="description"
+		content="Welcome to the Startpage of SvelteKit BetterAuth Prisma application."
+	/>
+</svelte:head>
+
+<h2 class="h4">Startpage</h2>

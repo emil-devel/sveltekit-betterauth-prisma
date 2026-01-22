@@ -1,77 +1,204 @@
-import { randomBytes } from 'node:crypto';
-import { env } from '$env/dynamic/private';
+import { sveltekitCookies } from 'better-auth/svelte-kit';
+import { getRequestEvent } from '$app/server';
+import { betterAuth } from 'better-auth';
+import { redirect } from 'sveltekit-flash-message/server';
+import { prismaAdapter } from 'better-auth/adapters/prisma';
 import prisma from '$lib/prisma';
-import type { RequestEvent } from '@sveltejs/kit';
+import { sendEmail } from '$lib/nodemailer';
+import {
+	BETTER_AUTH_SECRET,
+	BETTER_AUTH_URL,
+	GITHUB_CLIENT_ID,
+	GITHUB_CLIENT_SECRET,
+	GOOGLE_CLIENT_ID,
+	GOOGLE_CLIENT_SECRET
+} from '$env/static/private';
 
-const SESSION_COOKIE = 'session_token';
-const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7; // 7 days
+const USERNAME_MIN_LENGTH = 4;
+const USERNAME_MAX_LENGTH = 12;
+const BOOTSTRAP_ROLE_LOCK_ID = 784_221;
 
-function generateSessionToken() {
-	return randomBytes(32).toString('hex');
-}
-
-async function createSession(userId: string) {
-	const token = generateSessionToken();
-	const expiresAt = new Date(Date.now() + SESSION_MAX_AGE_SECONDS * 1000);
-
-	const session = await prisma.session.create({
-		data: {
-			id: token,
-			token,
-			expiresAt,
-			userId
-		}
-	});
-
-	return { token, session };
-}
-
-async function deleteSession(token: string) {
-	await prisma.session.deleteMany({ where: { token } });
-}
-
-function setSessionCookie(event: RequestEvent, token: string, expiresAt: Date) {
-	event.cookies.set(SESSION_COOKIE, token, {
-		path: '/',
-		httpOnly: true,
-		sameSite: 'lax',
-		secure: env.NODE_ENV === 'production',
-		expires: expiresAt
-	});
-}
-
-function clearSessionCookie(event: RequestEvent) {
-	event.cookies.set(SESSION_COOKIE, '', {
-		path: '/',
-		httpOnly: true,
-		sameSite: 'lax',
-		secure: env.NODE_ENV === 'production',
-		expires: new Date(0)
-	});
-}
-
-async function getSessionFromEvent(event: RequestEvent) {
-	const token = event.cookies.get(SESSION_COOKIE);
-	if (!token) return null;
-
-	const session = await prisma.session.findUnique({
-		where: { token },
-		include: { user: true }
-	});
-
-	if (!session) return null;
-	if (session.expiresAt < new Date()) {
-		await deleteSession(token);
-		return null;
+const sanitizeOAuthUsernameBase = (raw: string): string => {
+	let value = raw.toLowerCase().trim();
+	try {
+		value = value.normalize('NFKD').replace(/\p{Diacritic}/gu, '');
+	} catch {
+		// ignore environments without unicode property escapes
 	}
 
-	return session;
-}
+	value = value
+		.replace(/[^a-z0-9._]+/g, '.')
+		.replace(/[._]+/g, '.')
+		.replace(/^[0-9._]+/, '');
 
-export const auth = {
-	createSession,
-	deleteSession,
-	setSessionCookie,
-	clearSessionCookie,
-	getSessionFromEvent
+	if (!value) value = 'user';
+	if (!/^[a-z]/.test(value)) value = `u${value}`;
+
+	value = value.slice(0, USERNAME_MAX_LENGTH);
+	if (value.length < USERNAME_MIN_LENGTH) {
+		value = (value + 'user').slice(0, USERNAME_MIN_LENGTH);
+	}
+
+	value = value.replace(/[._]+/g, '.');
+	if (!/^[a-z]/.test(value)) value = `u${value}`.slice(0, USERNAME_MAX_LENGTH);
+	value = value.replace(/^[0-9._]+/, 'u');
+
+	return value;
 };
+
+const buildOAuthUsernameCandidate = (base: string, attempt: number): string => {
+	if (attempt <= 1) return base.slice(0, USERNAME_MAX_LENGTH);
+
+	const suffix = String(attempt);
+	const maxBaseLength = USERNAME_MAX_LENGTH - suffix.length;
+	const minBaseLength = Math.max(1, USERNAME_MIN_LENGTH - suffix.length);
+
+	let basePart = base.slice(0, Math.max(minBaseLength, maxBaseLength));
+	basePart = basePart.slice(0, maxBaseLength);
+	if (basePart.length < minBaseLength) {
+		basePart = (basePart + 'user').slice(0, minBaseLength);
+	}
+
+	return `${basePart}${suffix}`;
+};
+
+const findAvailableOAuthUsername = async (rawBase: string): Promise<string> => {
+	const base = sanitizeOAuthUsernameBase(rawBase);
+
+	for (let attempt = 1; attempt <= 50; attempt += 1) {
+		const candidate = buildOAuthUsernameCandidate(base, attempt);
+		const existing = await prisma.user.findFirst({
+			where: { name: candidate } as { name: string },
+			select: { id: true }
+		});
+		if (!existing) return candidate;
+	}
+
+	for (let attempt = 0; attempt < 20; attempt += 1) {
+		const random = Math.random().toString(36).slice(2, 8);
+		const candidate = `u${random}`.slice(0, USERNAME_MAX_LENGTH);
+		const existing = await prisma.user.findFirst({
+			where: { name: candidate } as { name: string },
+			select: { id: true }
+		});
+		if (!existing) return candidate;
+	}
+
+	return `u${crypto
+		.randomUUID()
+		.replace(/-/g, '')
+		.slice(0, USERNAME_MAX_LENGTH - 1)}`;
+};
+
+export const auth = betterAuth({
+	database: prismaAdapter(prisma, {
+		provider: 'postgresql'
+	}),
+	secret: BETTER_AUTH_SECRET,
+	baseURL: BETTER_AUTH_URL,
+	basePath: '/api/auth',
+	trustedOrigins: [BETTER_AUTH_URL],
+	databaseHooks: {
+		user: {
+			create: {
+				before: async (user, ctx) => {
+					const role = await prisma.$transaction(async (tx) => {
+						await tx.$executeRaw`select pg_advisory_xact_lock(${BOOTSTRAP_ROLE_LOCK_ID})`;
+						const existing = await tx.user.findFirst({ select: { id: true } });
+						if (!existing) return 'ADMIN';
+						return (user as { role?: string }).role ?? 'USER';
+					});
+
+					let name = user.name;
+					if (ctx?.path === '/callback/:id') {
+						const emailLocalPart = user.email?.split('@')[0] ?? '';
+						const rawBase = user.name?.trim() || emailLocalPart || 'user';
+						name = await findAvailableOAuthUsername(rawBase);
+					}
+
+					return { data: { ...user, name, role } };
+				},
+				after: async (user) => {
+					if (!user?.id || !user?.name) return;
+					try {
+						await prisma.profile.create({
+							data: { userId: user.id, name: user.name }
+						});
+					} catch (error) {
+						const err = error as { code?: string } | null | undefined;
+						if (err?.code === 'P2002') return;
+						throw error;
+					}
+				}
+			}
+		}
+	},
+	user: {
+		additionalFields: {
+			active: {
+				type: 'boolean',
+				required: false,
+				defaultValue: true,
+				input: false
+			},
+			role: {
+				type: 'string',
+				required: false,
+				defaultValue: 'USER',
+				input: false
+			}
+		}
+	},
+	emailAndPassword: {
+		enabled: true,
+		requireEmailVerification: true,
+		autoSignIn: true, //defaults to true
+		sendResetPassword: async ({ user, url }) => {
+			void sendEmail({
+				to: user.email,
+				subject: 'Reset your password.',
+				text: `Click the <a href="${url}">link</a> to reset your password.`
+			});
+		},
+		resetPasswordTokenExpiresIn: 3600,
+		trustedOrigins: [BETTER_AUTH_URL],
+		onPasswordReset: async ({ user }) => {
+			throw redirect(
+				303,
+				'/login',
+				{
+					type: 'success',
+					message: `Password for user ${user.email} has been reset.`
+				},
+				getRequestEvent()
+			);
+		}
+	},
+	emailVerification: {
+		autoSignInAfterVerification: true,
+		sendVerificationEmail: async ({ user, url }) => {
+			void sendEmail({
+				to: user.email,
+				subject: 'Verify your email address.',
+				text: `Click the <a href="${url}">link</a> to verify your email.`
+			});
+		}
+	},
+	account: {
+		accountLinking: {
+			enabled: true,
+			trustedProviders: ['github', 'google']
+		}
+	},
+	socialProviders: {
+		github: {
+			clientId: GITHUB_CLIENT_ID as string,
+			clientSecret: GITHUB_CLIENT_SECRET as string
+		},
+		google: {
+			clientId: GOOGLE_CLIENT_ID as string,
+			clientSecret: GOOGLE_CLIENT_SECRET as string
+		}
+	},
+	plugins: [sveltekitCookies(getRequestEvent)]
+});

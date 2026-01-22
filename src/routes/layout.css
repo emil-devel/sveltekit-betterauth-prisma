@@ -8,18 +8,8 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+@import '@friendofsvelte/tipex/styles/index.css';
+
 svg {
 	display: inline-block;
-}
-
-body {
-	background-image: radial-gradient(
-		at 24% 25%,
-		color-mix(in oklab, var(--color-primary-500) 30%, transparent) 0px,
-		transparent 30%
-	);
-	background-attachment: fixed;
-	background-position: center;
-	background-repeat: no-repeat;
-	background-size: cover;
 }
