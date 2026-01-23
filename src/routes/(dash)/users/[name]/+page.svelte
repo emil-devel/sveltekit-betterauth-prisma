@@ -133,6 +133,7 @@
 								type="email"
 								name="emailPublic"
 								bind:value={$emailForm.emailPublic}
+								id="emailPublic"
 								spellcheck="false"
 							/>
 							<button class="ig-btn preset-tonal btn-sm" type="submit"> Submit </button>
