@@ -1,10 +1,10 @@
 <script lang="ts">
+	import { profileFirstNameSchema } from '$lib/valibot';
+	import { UserRound } from '@lucide/svelte';
+	import { flip } from 'svelte/animate';
+	import { slide } from 'svelte/transition';
 	import { superForm } from 'sveltekit-superforms';
 	import { valibot } from 'sveltekit-superforms/adapters';
-	import { profileFirstNameSchema } from '$lib/valibot';
-	import { slide } from 'svelte/transition';
-	import { flip } from 'svelte/animate';
-	import { UserRound } from '@lucide/svelte';
 
 	let props = $props();
 	let { id, isSelf, iconSize } = props;
