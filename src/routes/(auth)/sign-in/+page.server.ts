@@ -5,7 +5,7 @@ import { loginSchema } from '$lib/valibot';
 import { valibot } from 'sveltekit-superforms/adapters';
 import { fail, setError, superValidate } from 'sveltekit-superforms';
 import { redirect } from 'sveltekit-flash-message/server';
-import prisma from '$lib/prisma'
+import prisma from '$lib/prisma';
 
 export const load = (async () => {
 	const form = await superValidate(valibot(loginSchema));
@@ -21,7 +21,7 @@ export const actions: Actions = {
 
 		if (!form.valid) return fail(400, { form });
 
-		const result = await prisma.user.findFirst({where: {email}});
+		const result = await prisma.user.findFirst({ where: { email } });
 
 		const user = result;
 		if (!user) {

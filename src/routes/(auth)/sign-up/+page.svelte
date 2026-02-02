@@ -1,11 +1,13 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
 	import { registerSchema } from '$lib/valibot';
+	import { resolve } from '$app/paths';
 	import { valibot } from 'sveltekit-superforms/adapters';
 	import { superForm } from 'sveltekit-superforms';
 	import { ArrowRight, Lock, LockOpen, LogIn, Mail, UserRound } from '@lucide/svelte';
 	import { fly, slide } from 'svelte/transition';
 	import { flip } from 'svelte/animate';
+	import { fromAction } from 'svelte/attachments';
 
 	let props: PageProps = $props();
 	let data = $state(props.data);
@@ -25,6 +27,7 @@
 			] as string[][]
 		).flat()
 	);
+	const enhanceAttachment = fromAction(enhance);
 </script>
 
 <svelte:head>
@@ -37,9 +40,9 @@
 		<LogIn />
 		<span>Sign Up</span>
 	</h1>
-	<form class="space-y-4 py-4" method="post" use:enhance>
+	<form class="space-y-4 py-4" method="post" {@attach enhanceAttachment}>
 		<fieldset class="space-y-2">
-			<label class="input-group grid-cols-[auto_1fr_auto]">
+			<label class="input-group grid-cols-[auto_1fr_auto]" for="email">
 				<div class="ig-cell preset-tonal" class:text-error-500={$errors.email}>
 					<Mail size="16" />
 				</div>
@@ -52,11 +55,12 @@
 					onblur={() => ($form.email = ($form.email ?? '').trim().toLowerCase())}
 					aria-invalid={$errors.email ? 'true' : undefined}
 					placeholder="email"
+					id="email"
 					spellcheck="false"
 					required
 				/>
 			</label>
-			<label class="input-group grid-cols-[auto_1fr_auto]">
+			<label class="input-group grid-cols-[auto_1fr_auto]" for="name">
 				<div class="ig-cell preset-tonal" class:text-error-500={$errors.name}>
 					<UserRound size="16" />
 				</div>
@@ -69,11 +73,12 @@
 					onblur={() => ($form.name = ($form.name ?? '').trim().toLowerCase())}
 					aria-invalid={$errors.name ? 'true' : undefined}
 					placeholder="username"
+					id="name"
 					spellcheck="false"
 					required
 				/>
 			</label>
-			<label class="input-group grid-cols-[auto_1fr_auto]">
+			<label class="input-group grid-cols-[auto_1fr_auto]" for="password">
 				<div class="ig-cell preset-tonal" class:text-error-500={$errors.password}>
 					<Lock size="16" />
 				</div>
@@ -84,10 +89,11 @@
 					name="password"
 					aria-invalid={$errors.password ? 'true' : undefined}
 					placeholder="password"
+					id="password"
 					required
 				/>
 			</label>
-			<label class="input-group grid-cols-[auto_1fr_auto]">
+			<label class="input-group grid-cols-[auto_1fr_auto]" for="passwordConfirm">
 				<div class="ig-cell preset-tonal" class:text-error-500={$errors._errors?.[0]}>
 					<LockOpen size="16" />
 				</div>
@@ -98,6 +104,7 @@
 					name="passwordConfirm"
 					aria-invalid={$errors.passwordConfirm ? 'true' : undefined}
 					placeholder="password confirm"
+					id="passwordConfirm"
 					required
 				/>
 			</label>
@@ -123,7 +130,7 @@
 				>
 					<span>Have Account?</span>
 					<ArrowRight size="12" />
-					<a href="/sign-in" class="anchor">Sign In</a>
+					<a href={resolve('/sign-in')} class="anchor">Sign In</a>
 				</p>
 			</div>
 		{/if}

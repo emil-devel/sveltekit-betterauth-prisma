@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
 	import { page } from '$app/state';
+	import { resolve } from '$app/paths';
 	import { superForm } from 'sveltekit-superforms';
 	import { Avatar } from '@skeletonlabs/skeleton-svelte';
 	import { isSelf as isSelfUtil } from '$lib/permissions';
@@ -64,11 +65,10 @@
 				</Avatar>
 				{#if isSelf}
 					<button
-					onclick={() => (avatarEdit = !avatarEdit)}
-					class="absolute -right-4 -bottom-1 btn-icon btn rounded-full preset-filled-surface-300-700 p-1.5"
-				>
-					<Pen size={24} />
-				</button>
+						onclick={() => (avatarEdit = !avatarEdit)}
+						class="absolute -right-4 -bottom-1 btn-icon btn rounded-full preset-filled-surface-300-700 p-1.5"
+						><Pen size={24} />
+					</button>
 				{/if}
 			</div>
 		</header>
@@ -91,7 +91,7 @@
 		</footer>
 	</div>
 	<div class="mt-8 flex items-center justify-between gap-4 border-t border-surface-200-800 p-2">
-		<a class="btn preset-tonal btn-sm" href="/users/{name}">
+		<a class="btn preset-tonal btn-sm" href={resolve(`/users/${name}`)}>
 			<ArrowBigLeft size={iconSize} />
 			{name}
 		</a>

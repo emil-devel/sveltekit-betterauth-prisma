@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { resolve } from '$app/paths';
 	import { Github, House, LogIn } from '@lucide/svelte';
-	import Nav from './Nav.svelte';
+	import NavPublic from '$lib/site/NavPublic.svelte';
 </script>
 
 <nav class="flex flex-wrap items-center justify-between gap-8" aria-label="Footer Mainnavigation">
@@ -11,7 +12,7 @@
 				class="btn preset-outlined-primary-200-800 btn-sm hover:preset-filled-primary-200-800"
 				class:preset-filled-primary-200-800={page.url.pathname === '/'}
 				aria-current={page.url.pathname === '/'}
-				href="/"
+				href={resolve('/')}
 			>
 				<House size="16" />
 				<span>Home</span>
@@ -19,13 +20,12 @@
 		</li>
 	</ul>
 	<ul class="flex flex-wrap items-center gap-4">
-		{#if page.data.authUser}
-			<Nav targetOrdner={'(dash)'} />
-		{:else if page.url.pathname !== '/sign-in' && page.url.pathname !== '/sign-up'}
+		<NavPublic />
+		{#if !page.data.authUser && page.url.pathname !== '/sign-in' && page.url.pathname !== '/sign-up'}
 			<li>
 				<a
 					class="btn preset-outlined-primary-200-800 btn-sm hover:preset-filled-primary-200-800"
-					href="/sign-in"
+					href={resolve('/sign-in')}
 				>
 					<LogIn size="16" />
 					<span>Sign In</span>

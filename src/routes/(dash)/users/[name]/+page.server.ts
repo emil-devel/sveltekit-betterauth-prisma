@@ -83,10 +83,8 @@ export const actions: Actions = {
 			const message = error instanceof Error ? error.message : String(error);
 			return setFlash({ type: 'error', message }, event.cookies);
 		}
-		
-		const message = emailPublic
-			? `Public email set to "${emailPublic}".`
-			: 'Public email removed.';
+
+		const message = emailPublic ? `Public email set to "${emailPublic}".` : 'Public email removed.';
 		setFlash({ type: 'success', message }, event.cookies);
 	},
 	active: async (event) => {

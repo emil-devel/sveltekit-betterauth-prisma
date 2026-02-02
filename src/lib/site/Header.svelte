@@ -1,10 +1,11 @@
 <script lang="ts">
 	import type { AuthUser } from '$lib/permissions';
 	import { page } from '$app/state';
+	import { resolve } from '$app/paths';
 	import favicon from '$lib/assets/favicon.svg';
+	import NavPublic from '$lib/site/NavPublic.svelte';
 	import { Popover, Portal } from '@skeletonlabs/skeleton-svelte';
-	import { House, LogOut, Settings, UserRound, UsersRound } from '@lucide/svelte';
-	import Nav from '$lib/site/Nav.svelte';
+	import { LogOut, Settings, UserRound, UsersRound } from '@lucide/svelte';
 	const iconSize = 16;
 
 	const logo_class = 'flex items-center gap-2';
@@ -24,28 +25,28 @@
 				{@render siteName()}
 			</span>
 		{:else}
-			<a class={logo_class} href="/" title="Back to home">
+			<a class={logo_class} href={resolve('/')} title="Back to home">
 				{@render siteName()}
 			</a>
 		{/if}
 	</h2>
 	<!-- {#if page.data.session} -->
-		<nav class="flex-auto" aria-label="Hauptnavigation">
-			<ul class="flex items-center justify-center gap-4">
-				<!-- <li>
+	<nav class="flex-auto" aria-label="Hauptnavigation">
+		<ul class="flex items-center justify-center gap-4">
+			<!-- <li>
 					<a
 						class="btn preset-outlined-primary-200-800 btn-sm hover:preset-filled-primary-200-800"
 						class:preset-filled-primary-200-800={page.url.pathname === '/'}
 						aria-current={page.url.pathname === '/'}
-						href="/"
+						href={resolve('/')}
 					>
 						<House size={iconSize} />
 						<span>Home</span>
 					</a>
 				</li> -->
-				<Nav targetOrdner={'(public)'} />
-			</ul>
-		</nav>
+			<NavPublic />
+		</ul>
+	</nav>
 	<!-- {/if} -->
 	<div>
 		{#if page.data.session}
@@ -83,7 +84,7 @@
 									</li>
 									{#if authUser?.role === 'ADMIN' && page.url.pathname !== '/users'}
 										<li>
-											<a class="anchor" href="/users">
+											<a class="anchor" href={resolve('/users')}>
 												<UsersRound size={iconSize} />
 												<span>Manage users</span>
 											</a>
@@ -91,7 +92,7 @@
 									{/if}
 									{#if authUser?.name && page.url.pathname !== `/users/${authUser.name}`}
 										<li>
-											<a class="anchor" href="/users/{authUser.name}">
+											<a class="anchor" href={resolve(`/users/${authUser.name}`)}>
 												<Settings size={iconSize} />
 												<span>Settings</span>
 											</a>
@@ -100,7 +101,7 @@
 								</ul>
 								<hr class="hr opacity-20" />
 								<div class="border-t-2 border-t-primary-100-900 pt-2 text-center">
-									<a class="btn preset-filled-secondary-200-800 btn-sm" href="/sign-out">
+									<a class="btn preset-filled-secondary-200-800 btn-sm" href={resolve('/sign-out')}>
 										Sign Out <LogOut size="16" />
 									</a>
 								</div>

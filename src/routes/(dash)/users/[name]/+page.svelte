@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
 	import { page } from '$app/state';
+	import { resolve } from '$app/paths';
 	import { ROLES } from '$lib/permissions';
 	import { superForm } from 'sveltekit-superforms';
 	import { valibot } from 'sveltekit-superforms/adapters';
@@ -8,6 +9,7 @@
 	import { Avatar, Switch } from '@skeletonlabs/skeleton-svelte';
 	import { scale, slide } from 'svelte/transition';
 	import { flip } from 'svelte/animate';
+	import { fromAction } from 'svelte/attachments';
 	import {
 		ArrowBigLeft,
 		Mail,
@@ -46,11 +48,21 @@
 	const { enhance: deleteEnhance } = superForm(data.deleteForm);
 
 	const errorsEmail = $derived(($emailErrors.emailPublic ?? []) as string[]);
+	const emailEnhanceAttachment = fromAction(emailEnhance);
+	const activeEnhanceAttachment = fromAction(activeEnhance);
+	const roleEnhanceAttachment = fromAction(roleEnhance);
+	const deleteEnhanceAttachment = fromAction(deleteEnhance);
 
 	let deleteConfirm = $state(false);
 
 	// Form element reference for the active Switch; we update the superform store directly
 	let activeFormEl: HTMLFormElement | null = $state(null);
+	const activeFormAttachment = (node: HTMLFormElement) => {
+		activeFormEl = node;
+		return () => {
+			if (activeFormEl === node) activeFormEl = null;
+		};
+	};
 
 	const viewerId = $derived(page.data.authUser?.id ?? null);
 	const viewerRole = $derived(page.data.authUser?.role ?? null);
@@ -121,7 +133,7 @@
 					</div>
 				{/if}
 				{#if viewerId === id}
-					<form method="post" action="?/email" use:emailEnhance>
+					<form method="post" action="?/email" {@attach emailEnhanceAttachment}>
 						<input class="input" type="hidden" name="id" value={id} />
 						<label class="label label-text" for="emailPublic">Public Email</label>
 						<div class="input-group grid-cols-[auto_1fr_auto]">
@@ -163,7 +175,12 @@
 				{/if}
 				{#if viewerRole === 'ADMIN' && viewerId !== id}
 					<div class="flex justify-between gap-4">
-						<form bind:this={activeFormEl} method="post" action="?/active" use:activeEnhance>
+						<form
+							method="post"
+							action="?/active"
+							{@attach activeEnhanceAttachment}
+							{@attach activeFormAttachment}
+						>
 							<input class="input" type="hidden" name="id" value={id} />
 							<div class="flex flex-col gap-2">
 								<Switch
@@ -181,17 +198,18 @@
 								</Switch>
 							</div>
 						</form>
-						<form method="post" action="?/role" use:roleEnhance>
+						<form method="post" action="?/role" {@attach roleEnhanceAttachment}>
 							<input class="input" type="hidden" name="id" value={id} />
-							<label class="label">
+							<label class="label" for="role-select">
 								<span class="label-text">Role</span>
 								<select
 									onchange={(e) => (e.currentTarget as HTMLSelectElement).form?.requestSubmit()}
 									bind:value={$roleForm.role}
 									class="select w-fit text-sm lowercase"
 									name="role"
+									id="role-select"
 								>
-									{#each ROLES as role}
+									{#each ROLES as role (role)}
 										<option value={role}>{role}</option>
 									{/each}
 								</select>
@@ -213,7 +231,7 @@
 								class="btn preset-filled-surface-300-700 btn-sm"
 								onclick={() => (deleteConfirm = false)}>Cancel</button
 							>
-							<form method="post" action="?/delete" use:deleteEnhance>
+							<form method="post" action="?/delete" {@attach deleteEnhanceAttachment}>
 								<input type="hidden" name="id" value={id} />
 								<button
 									class="btn preset-filled-error-300-700 btn-sm"
@@ -249,12 +267,15 @@
 		</footer>
 	</div>
 	<div class="mt-8 flex items-center justify-between gap-4 border-t border-surface-200-800 p-2">
-		<a class="btn preset-tonal btn-sm" href="/users">
+		<a class="btn preset-tonal btn-sm" href={resolve('/users')}>
 			<ArrowBigLeft size={iconSize} />
 			Users
 		</a>
 		{#if viewerId === id || viewerRole === 'ADMIN'}
-			<a class="btn preset-filled-secondary-300-700 btn-sm" href="/users/{name}/profile">
+			<a
+				class="btn preset-filled-secondary-300-700 btn-sm"
+				href={resolve(`/users/${name}/profile`)}
+			>
 				Profile
 				<UserRoundPen size={iconSize} />
 			</a>

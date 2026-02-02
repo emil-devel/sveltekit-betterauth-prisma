@@ -1,12 +1,14 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
 	import { loginSchema } from '$lib/valibot';
+	import { resolve } from '$app/paths';
 	import { valibot } from 'sveltekit-superforms/adapters';
 	import { superForm } from 'sveltekit-superforms';
 	import { ArrowRight, Github, Globe, Lock, LogIn, Mail } from '@lucide/svelte';
 	import { signIn } from '$lib/auth-client';
 	import { fly, slide } from 'svelte/transition';
 	import { flip } from 'svelte/animate';
+	import { fromAction } from 'svelte/attachments';
 
 	let props: PageProps = $props();
 	let data = $state(props.data);
@@ -16,6 +18,7 @@
 	});
 
 	const formErrors = $derived(([$errors.email ?? [], $errors.password ?? []] as string[][]).flat());
+	const enhanceAttachment = fromAction(enhance);
 </script>
 
 <svelte:head>
@@ -52,9 +55,9 @@
 			Sign In with Google
 		</button>
 	</div>
-	<form class="space-y-4 py-4" method="post" use:enhance>
+	<form class="space-y-4 py-4" method="post" {@attach enhanceAttachment}>
 		<fieldset class="space-y-2">
-			<label class="input-group grid-cols-[auto_1fr_auto]">
+			<label class="input-group grid-cols-[auto_1fr_auto]" for="email">
 				<div class="ig-cell preset-tonal" class:text-error-500={$errors.email}>
 					<Mail size="16" />
 				</div>
@@ -67,11 +70,12 @@
 					onblur={() => ($form.email = ($form.email ?? '').trim().toLowerCase())}
 					aria-invalid={$errors.email ? true : undefined}
 					placeholder="email"
+					id="email"
 					spellcheck="false"
 					required
 				/>
 			</label>
-			<label class="input-group grid-cols-[auto_1fr_auto]">
+			<label class="input-group grid-cols-[auto_1fr_auto]" for="password">
 				<div class="ig-cell preset-tonal" class:text-error-500={$errors.password}>
 					<Lock size="16" />
 				</div>
@@ -82,6 +86,7 @@
 					name="password"
 					aria-invalid={$errors.password ? true : undefined}
 					placeholder="password"
+					id="password"
 					required
 				/>
 			</label>
@@ -103,7 +108,7 @@
 				>
 					<span>Haven't Account?</span>
 					<ArrowRight size="12" />
-					<a href="/sign-up" class="anchor">Sign Up</a>
+					<a href={resolve('/sign-up')} class="anchor">Sign Up</a>
 				</p>
 			</div>
 		{/if}

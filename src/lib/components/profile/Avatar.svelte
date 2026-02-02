@@ -5,7 +5,8 @@
 	import { profileAvatarSchema } from '$lib/valibot';
 	import { scale, slide } from 'svelte/transition';
 	import { flip } from 'svelte/animate';
-	import { ImagePlus, Trash, UserRoundPen, X } from '@lucide/svelte';
+	import { ImagePlus, Trash, X } from '@lucide/svelte';
+	import { fromAction } from 'svelte/attachments';
 
 	let props = $props();
 	let { id, data, isSelf, iconSize } = $state(props);
@@ -27,11 +28,22 @@
 	let avatarDelete = $state(false);
 	let avatarFormEl: HTMLFormElement | null = $state(null);
 	let avatarPreview: string | undefined = $state();
-	const avatarUpload = (details: any) => {
-		// Normalize payload to support both CustomEvent and direct object usage
-		const payload = details?.detail ?? details;
+	type FileUploadDetail = {
+		files?: File[];
+		file?: File;
+		acceptedFiles?: File[];
+	};
+
+	const getFileFromUpload = (input: unknown): File | undefined => {
+		if (!input || typeof input !== 'object') return;
+		const maybeWithDetail = input as { detail?: unknown };
+		const payload = (maybeWithDetail.detail ?? input) as FileUploadDetail;
+		return payload.files?.[0] ?? payload.file ?? payload.acceptedFiles?.[0];
+	};
+
+	const avatarUpload = (details: unknown) => {
 		avatarErrors.set({ avatar: [] });
-		const file = payload?.files?.[0] ?? payload?.file ?? payload?.acceptedFiles?.[0];
+		const file = getFileFromUpload(details);
 		// If no file present, this is likely a remove/clear event from FileUpload
 		if (!file) {
 			avatarPreview = undefined;
@@ -64,51 +76,26 @@
 			}
 		}, 100);
 	};
+
+	const avatarEnhanceAttachment = fromAction(avatarEnhance);
+
+	const avatarFormAttachment = (node: HTMLFormElement) => {
+		avatarFormEl = node;
+		return () => {
+			if (avatarFormEl === node) avatarFormEl = null;
+		};
+	};
 </script>
 
 {#if isSelf}
 	{#if avatarEdit}
 		<div class="border border-surface-200-800 p-2" transition:slide>
 			<form
-				bind:this={avatarFormEl}
 				method="post"
 				action="?/avatar"
 				enctype="multipart/form-data"
-				use:avatarEnhance={{
-					onResult: ({ result }) => {
-						const status = (result as any)?.status ?? 200;
-						const isFailure = (result as any)?.type === 'failure' || status >= 400;
-						if (!isFailure) {
-							const newAvatar: unknown = (result as any)?.data?.form?.data?.avatar;
-							// Update both the store and preview
-							if (typeof newAvatar === 'string') {
-								if (newAvatar.length > 0) {
-									// Upload path: server returned the new avatar string
-									$avatarForm.avatar = newAvatar;
-									avatarPreview = newAvatar;
-								} else {
-									// Deletion path: explicit empty string means clear
-									$avatarForm.avatar = '' as any;
-									avatarPreview = undefined;
-								}
-							} else {
-								// Server did not echo avatar back.
-								// If we have a local preview, assume upload success and use it;
-								// otherwise assume deletion success and clear immediately.
-								if (avatarPreview && avatarPreview.length > 0) {
-									$avatarForm.avatar = avatarPreview;
-								} else {
-									$avatarForm.avatar = '' as any;
-									avatarPreview = undefined;
-								}
-							}
-							// Clear the FileUpload chip by resetting the form after the state updates have propagated
-							setTimeout(() => {
-								avatarFormEl?.reset();
-							}, 0);
-						}
-					}
-				}}
+				{@attach avatarEnhanceAttachment}
+				{@attach avatarFormAttachment}
 			>
 				<input type="hidden" name="id" value={id} />
 				<input type="hidden" name="avatar" bind:value={avatarPreview} />
