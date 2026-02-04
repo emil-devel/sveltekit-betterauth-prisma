@@ -1,8 +1,7 @@
-import nodemailer from 'nodemailer';
+import type SMTPTransport from 'nodemailer/lib/smtp-transport';
 // import { SEND_MAIL_FROM, SEND_MAIL_HOST, SEND_MAIL_PORT, SEND_MAIL_PASS, SEND_MAIL_USER } from '$env/static/private'
 import { SEND_MAIL_FROM, SEND_MAIL_HOST, SEND_MAIL_PORT } from '$env/static/private';
-
-import type SMTPTransport from 'nodemailer/lib/smtp-transport';
+import nodemailer from 'nodemailer';
 
 const transporter = nodemailer.createTransport({
 	host: SEND_MAIL_HOST as string,

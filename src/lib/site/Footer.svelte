@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
-	import { Github, House, LogIn } from '@lucide/svelte';
+	import { Github, House, LogIn, UsersRound } from '@lucide/svelte';
 	import NavPublic from '$lib/site/NavPublic.svelte';
 
 	const iconSize = 16;
@@ -20,10 +20,23 @@
 				<span>Home</span>
 			</a>
 		</li>
+		<NavPublic {iconSize} />
 	</ul>
 	<ul class="flex flex-wrap items-center gap-4">
-		<NavPublic {iconSize} />
-		{#if !page.data.authUser && page.url.pathname !== '/sign-in' && page.url.pathname !== '/sign-up'}
+		{#if page.data.authUser}
+			<li>
+				<a
+					class="btn preset-outlined-primary-200-800 btn-sm hover:preset-filled-primary-200-800"
+					class:preset-filled-primary-200-800={page.url.pathname === '/users'}
+					class:preset-tonal-primary={page.url.pathname.includes('/users')}
+					aria-current={page.url.pathname === '/users'}
+					href={resolve('/users')}
+				>
+					<UsersRound size="16" />
+					<span>Users</span>
+				</a>
+			</li>
+		{:else if page.url.pathname !== '/sign-in' && page.url.pathname !== '/sign-up'}
 			<li>
 				<a
 					class="btn preset-outlined-primary-200-800 btn-sm hover:preset-filled-primary-200-800"
