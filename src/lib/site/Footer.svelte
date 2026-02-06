@@ -32,7 +32,7 @@
 					aria-current={page.url.pathname === '/users'}
 					href={resolve('/users')}
 				>
-					<UsersRound size="16" />
+					<UsersRound size={iconSize} />
 					<span>Users</span>
 				</a>
 			</li>
@@ -42,7 +42,7 @@
 					class="btn preset-outlined-primary-200-800 btn-sm hover:preset-filled-primary-200-800"
 					href={resolve('/sign-in')}
 				>
-					<LogIn size="16" />
+					<LogIn size={iconSize} />
 					<span>Sign In</span>
 				</a>
 			</li>
@@ -51,7 +51,7 @@
 </nav>
 <p class="text-center">
 	<a href="https://emil-devel.github.io/" target="_blank">
-		<Github size={16} />
+		<Github size={iconSize} />
 		<small>emil-devel.github.io</small>
 	</a>
 </p>

@@ -66,7 +66,7 @@
 				<input
 					bind:value={$form.email}
 					class="input text-sm"
-					type="text"
+					type="email"
 					name="email"
 					oninput={() => ($form.email = ($form.email ?? '').toLowerCase())}
 					onblur={() => ($form.email = ($form.email ?? '').trim().toLowerCase())}
