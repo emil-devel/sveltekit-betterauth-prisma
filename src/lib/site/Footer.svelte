@@ -1,9 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
-	import { Github, House, LogIn, UsersRound } from '@lucide/svelte';
 	import NavPublic from '$lib/site/NavPublic.svelte';
-
+	import { Github, House, LogIn, UsersRound } from '@lucide/svelte';
 	const iconSize = 16;
 </script>
 
