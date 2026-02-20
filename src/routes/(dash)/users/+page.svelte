@@ -5,10 +5,8 @@
 	import { resolve } from '$app/paths';
 	import { ArrowLeft, ArrowRight, Check, UsersRound, X } from '@lucide/svelte';
 
-	let props: PageProps = $props();
-	let data = $state(props.data);
-
-	let { users } = data;
+	let { data }: PageProps = $props();
+	let { users } = $derived(data);
 
 	type PaginationPage =
 		| { type: 'page'; value: number }

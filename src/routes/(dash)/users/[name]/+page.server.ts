@@ -22,7 +22,7 @@ export const load = (async (event) => {
 
 		const [emailForm, activeForm, roleForm, deleteForm] = await Promise.all([
 			superValidate(
-				{ id, emailPublic: user.emailPublic as string | undefined },
+				{ id, emailPublic: user.profileByName?.emailPublic as string | undefined },
 				valibot(userEmailSchema)
 			),
 			superValidate({ id, active: user.active }, valibot(activeUserSchema)),
